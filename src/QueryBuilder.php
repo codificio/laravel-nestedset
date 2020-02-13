@@ -378,7 +378,9 @@ class QueryBuilder extends Builder
     {
         list($lft, $rgt) = $this->wrappedColumns();
 
-        return $this->whereRaw("$lft = $rgt - 1");
+        return $this->whereRaw([
+            '$where' => "function() {return (this.$lft === (this.$rgt - 1))}",
+        ]);
     }
 
     /**
