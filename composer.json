@@ -1,6 +1,6 @@
 {
-    "name": "kalnoy/nestedset",
-    "description": "Nested Set Model for Laravel 5.7 and up",
+    "name": "codificio/nestedset",
+    "description": "Nested Set Model for Laravel 5.7 and up working with MongoDB",
     "keywords": ["laravel", "nested sets", "nsm", "database", "hierarchy"],
     "license": "MIT",
 
@@ -13,6 +13,7 @@
 
     "require": {
         "php": ">=7.1.3",
+        "jenssegers/mongodb": "^3.6",
         "illuminate/support": "~5.7.0|~5.8.0|^6.0",
         "illuminate/database": "~5.7.0|~5.8.0|^6.0",
         "illuminate/events": "~5.7.0|~5.8.0|^6.0"

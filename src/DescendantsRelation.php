@@ -2,8 +2,7 @@
 
 namespace Kalnoy\Nestedset;
 
-use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
-use Illuminate\Database\Eloquent\Model;
+use Jenssegers\Mongodb\Eloquent\Model;
 
 class DescendantsRelation extends BaseRelation
 {

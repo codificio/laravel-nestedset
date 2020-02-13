@@ -2,11 +2,11 @@
 
 namespace Kalnoy\Nestedset;
 
-use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Jenssegers\Mongodb\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
-use Illuminate\Database\Eloquent\Model;
+use Jenssegers\Mongodb\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use Illuminate\Database\Query\Builder;
+use Jenssegers\Mongodb\Query\Builder;
 use InvalidArgumentException;
 
 abstract class BaseRelation extends Relation

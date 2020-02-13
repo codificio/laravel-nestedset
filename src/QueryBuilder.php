@@ -35,12 +35,13 @@ class QueryBuilder extends Builder
 
         $query->where($this->model->getKeyName(), '=', $id);
 
-        $data = $query->first([ $this->model->getLftName(),
-                                $this->model->getRgtName() ]);
+        $data = $query->first([$this->model->getLftName(), $this->model->getRgtName()]);
 
-        if ( ! $data && $required) {
+        if (!$data && $required) {
             throw new ModelNotFoundException;
         }
+
+        unset($data[$this->model->getKeyName()]);
 
         return (array)$data;
     }
@@ -541,8 +542,7 @@ class QueryBuilder extends Builder
      */
     public function moveNode($key, $position)
     {
-        list($lft, $rgt) = $this->model->newNestedSetQuery()
-                                       ->getPlainNodeData($key, true);
+        list($lft, $rgt) = $this->model->newNestedSetQuery()->getPlainNodeData($key, true);
 
         if ($lft < $position && $position <= $rgt) {
             throw new LogicException('Cannot move node into itself.');
@@ -571,14 +571,7 @@ class QueryBuilder extends Builder
 
         $params = compact('lft', 'rgt', 'from', 'to', 'height', 'distance');
 
-        $boundary = [ $from, $to ];
-
-        $query = $this->toBase()->where(function (Query $inner) use ($boundary) {
-            $inner->whereBetween($this->model->getLftName(), $boundary);
-            $inner->orWhereBetween($this->model->getRgtName(), $boundary);
-        });
-
-        return $query->update($this->patch($params));
+        return $this->updateNodes($params);
     }
 
     /**
@@ -594,13 +587,38 @@ class QueryBuilder extends Builder
     public function makeGap($cut, $height)
     {
         $params = compact('cut', 'height');
+        return $this->updateNodes($params);
+    }
 
-        $query = $this->toBase()->whereNested(function (Query $inner) use ($cut) {
-            $inner->where($this->model->getLftName(), '>=', $cut);
-            $inner->orWhere($this->model->getRgtName(), '>=', $cut);
-        });
+    protected function updateNodes($params)
+    {
+        $updates = [];
 
-        return $query->update($this->patch($params));
+        foreach ([$this->model->getLftName(), $this->model->getRgtName()] as $col) {
+            $updates[$col] = $this->columnPatch($col, $params);
+        }
+
+        $updated = false;
+
+        foreach ($updates as $col => $ops) {
+
+            foreach ($ops as $upd) {
+                $query = $this->model->newNestedSetQuery();
+                $change = $upd['op'];
+                $op = $change > 0 ? 'increment' : 'decrement';
+
+                if (isset($upd['ids'])) {
+                    $updated = $query->whereIn($this->model->getKeyName(), $upd['ids'])->$op($col, abs($change));
+                }
+
+                if (isset($upd['cut'])) {
+                    $updated = $query->where($col, '>=', $upd['cut'])->$op($col, abs($change));
+                }
+            }
+
+        }
+
+        return $updated;
     }
 
     /**
@@ -628,22 +646,27 @@ class QueryBuilder extends Builder
     /**
      * Get patch for single column.
      *
-     * @since 2.0
-     *
      * @param string $col
      * @param array $params
      *
-     * @return string
+     * @return array
+     * @since 2.0
+     *
      */
     protected function columnPatch($col, array $params)
     {
         extract($params);
 
         /** @var int $height */
-        if ($height > 0) $height = '+'.$height;
+        if ($height > 0) $height = '+' . $height;
 
         if (isset($cut)) {
-            return new Expression("case when {$col} >= {$cut} then {$col}{$height} else {$col} end");
+            return [
+                [
+                    'cut' => $cut,
+                    'op' => $height,
+                ]
+            ];
         }
 
         /** @var int $distance */
@@ -651,13 +674,36 @@ class QueryBuilder extends Builder
         /** @var int $rgt */
         /** @var int $from */
         /** @var int $to */
-        if ($distance > 0) $distance = '+'.$distance;
+        if ($distance > 0) $distance = '+' . $distance;
 
-        return new Expression("case ".
-                              "when {$col} between {$lft} and {$rgt} then {$col}{$distance} ". // Move the node
-                              "when {$col} between {$from} and {$to} then {$col}{$height} ". // Move other nodes
-                              "else {$col} end"
-        );
+        if ($from == $lft) {
+            $otherRangeFrom = $rgt + 1;
+            $otherRangeTo = $to;
+        } else if ($to == $rgt) {
+            $otherRangeFrom = $from;
+            $otherRangeTo = $lft - 1;
+        } else {
+            throw new LogicException('Failed for logic error.');
+        }
+
+        $keyName = $this->model->getKeyName();
+        $query = $this->model->newNestedSetQuery();
+        $idsOfSelf = $query->whereBetween($col, [$lft, $rgt])->get([$keyName]);
+        $query2 = $this->model->newNestedSetQuery();
+        $idsOfOther = $query2->whereBetween($col, [$otherRangeFrom, $otherRangeTo])->get([$keyName]);
+        $idsOfSelf = $idsOfSelf->pluck($keyName)->all();
+        $idsOfOther = $idsOfOther->pluck($keyName)->all();
+
+        return [
+            [
+                'op' => $distance,
+                'ids' => $idsOfSelf,
+            ],
+            [
+                'op' => $height,
+                'ids' => $idsOfOther,
+            ]
+        ];
     }
 
     /**

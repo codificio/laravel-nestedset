@@ -3,7 +3,7 @@
 namespace Kalnoy\Nestedset;
 
 use Illuminate\Database\Eloquent\Collection as BaseCollection;
-use Illuminate\Database\Eloquent\Model;
+use Jenssegers\Mongodb\Eloquent\Model;
 
 class Collection extends BaseCollection
 {
