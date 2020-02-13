@@ -3,11 +3,11 @@
 namespace Kalnoy\Nestedset;
 
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
+use Jenssegers\Mongodb\Eloquent\Builder;
+use Jenssegers\Mongodb\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Database\Query\Builder as Query;
-use Illuminate\Database\Query\Builder as BaseQueryBuilder;
+use Jenssegers\Mongodb\Query\Builder as Query;
+use Jenssegers\Mongodb\Query\Builder as BaseQueryBuilder;
 use Illuminate\Support\Arr;
 use LogicException;
 use Illuminate\Database\Query\Expression;
