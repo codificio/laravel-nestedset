@@ -2,7 +2,7 @@
 
 namespace Kalnoy\Nestedset;
 
-use Jenssegers\Mongodb\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Jenssegers\Mongodb\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
