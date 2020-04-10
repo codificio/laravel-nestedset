@@ -89,7 +89,11 @@ class QueryBuilder extends Builder
     {
         $keyName = $this->model->getTable() . '.' . $this->model->getKeyName();
 
+        $node = null; // Fix for MongoDB. Since 5.1.5
+
         if (NestedSet::isNode($id)) {
+            $node = $id; // Fix for MongoDB. Since 5.1.5
+
             $value = '?';
 
             $this->query->addBinding($id->getRgt());
@@ -109,11 +113,19 @@ class QueryBuilder extends Builder
             $value = '('.$valueQuery->toSql().')';
         }
 
-        $this->query->whereNested(function ($inner) use ($value, $andSelf, $id, $keyName) {
+        $this->query->whereNested(function ($inner) use ($value, $andSelf, $id, $keyName, $node) {
             list($lft, $rgt) = $this->wrappedColumns();
             $wrappedTable = $this->query->getGrammar()->wrapTable($this->model->getTable());
 
-            $inner->whereRaw("{$value} between {$wrappedTable}.{$lft} and {$wrappedTable}.{$rgt}");
+            if ($node) {
+                // Fix for MongoDB. Since 5.1.5
+                $baseLft = $this->model->getLftName();
+                $baseRgt = $this->model->getRgtName();
+                $inner->where($baseLft, "<", $node->$baseLft);
+                $inner->where($baseRgt, ">", $node->$baseRgt);
+            } else {
+                $inner->whereRaw("{$value} between {$wrappedTable}.{$lft} and {$wrappedTable}.{$rgt}");
+            }
 
             if ( ! $andSelf) {
                 $inner->where($keyName, '<>', $id);
