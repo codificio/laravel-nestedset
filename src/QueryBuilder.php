@@ -376,7 +376,11 @@ class QueryBuilder extends Builder
      */
     public function whereIsLeaf()
     {
-        list($lft, $rgt) = $this->wrappedColumns();
+        // list($lft, $rgt) = $this->wrappedColumns();
+
+        // For some reason it doesn't work when the values are between "
+        $lft = $this->model->getLftName();
+        $rgt = $this->model->getRgtName();
 
         return $this->whereRaw([
             '$where' => "function() {return (this.$lft === (this.$rgt - 1))}",
