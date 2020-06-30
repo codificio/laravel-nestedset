@@ -196,7 +196,7 @@ class QueryBuilder extends Builder
      */
     public function whereNodeBetween($values, $boolean = 'and', $not = false)
     {
-        $this->query->whereBetween($this->model->getTable() . '.' . $this->model->getLftName(), $values, $boolean, $not);
+        $this->query->whereBetween($this->model->getLftName(), $values, $boolean, $not);
 
         return $this;
     }
